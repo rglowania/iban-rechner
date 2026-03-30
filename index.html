@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IBAN-Rechner – Berechnen, Prüfen & GiroCode</title>
+  <meta name="description" content="Kostenloser IBAN-Rechner: IBAN berechnen, validieren, aufschlüsseln, BLZ/BIC suchen, Massenverarbeitung und GiroCode-Generator für SEPA-Überweisungen." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ═══ HEADER ══════════════════════════════════════════════════════════════ -->
+<header>
+  <div class="header-inner">
+    <span class="logo">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="rgba(255,255,255,.15)"/>
+        <path d="M6 22h20M6 10h20" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+        <rect x="9" y="13" width="14" height="6" rx="2" fill="rgba(255,255,255,.9)"/>
+        <circle cx="13" cy="16" r="1.5" fill="#0057b8"/>
+        <circle cx="19" cy="16" r="1.5" fill="#0057b8"/>
+      </svg>
+      IBAN-Rechner
+      <span class="header-subtitle">– kostenlos &amp; sicher</span>
+    </span>
+  </div>
+</header>
+
+<!-- ═══ HERO ═════════════════════════════════════════════════════════════════ -->
+<section class="hero">
+  <h1>Der komplette IBAN-Rechner</h1>
+  <p>IBAN berechnen &amp; prüfen · BLZ/BIC-Suche · Massenverarbeitung · GiroCode-Generator – 100 % lokal im Browser, keine Datenübertragung.</p>
+</section>
+
+<!-- ═══ MAIN ══════════════════════════════════════════════════════════════════ -->
+<main>
+  <div class="container">
+
+    <!-- TABS -->
+    <div class="tabs" role="tablist">
+      <button class="tab-btn active" data-tab="calculate" role="tab">
+        <span class="tab-icon">🧮</span> IBAN berechnen
+      </button>
+      <button class="tab-btn" data-tab="validate" role="tab">
+        <span class="tab-icon">✅</span> IBAN prüfen
+      </button>
+      <button class="tab-btn" data-tab="parse" role="tab">
+        <span class="tab-icon">🔍</span> IBAN aufschlüsseln
+      </button>
+      <button class="tab-btn" data-tab="blz" role="tab">
+        <span class="tab-icon">🏦</span> BLZ / BIC-Suche
+      </button>
+      <button class="tab-btn" data-tab="bulk" role="tab">
+        <span class="tab-icon">📋</span> Massenverarbeitung
+      </button>
+      <button class="tab-btn" data-tab="girocode" role="tab">
+        <span class="tab-icon">📱</span> GiroCode
+      </button>
+      <button class="tab-btn" data-tab="countries" role="tab">
+        <span class="tab-icon">🌍</span> Länder &amp; Formate
+      </button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         TAB 1 – IBAN BERECHNEN
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <div class="tab-content active" id="tab-calculate" role="tabpanel">
+      <div class="card">
+        <div class="card-title"><span class="icon">🧮</span> IBAN aus Bankdaten berechnen</div>
+        <form id="calc-form" novalidate>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label for="calc-country">Land <span class="hint">(ISO-Ländercode)</span></label>
+              <select id="calc-country"></select>
+            </div>
+          </div>
+
+          <!-- Deutschland -->
+          <div id="calc-de-fields" class="form-grid" style="margin-top:1rem">
+            <div class="form-group">
+              <label for="calc-blz">Bankleitzahl (BLZ) <span class="hint">8 Ziffern</span></label>
+              <input type="text" id="calc-blz" placeholder="z. B. 50010517"
+                     inputmode="numeric" maxlength="8" autocomplete="off" required />
+            </div>
+            <div class="form-group">
+              <label for="calc-konto">Kontonummer <span class="hint">bis 10 Ziffern</span></label>
+              <input type="text" id="calc-konto" placeholder="z. B. 0648489890"
+                     inputmode="numeric" maxlength="10" autocomplete="off" required />
+            </div>
+          </div>
+
+          <!-- Andere Länder -->
+          <div id="calc-generic-fields" class="form-grid hidden" style="margin-top:1rem">
+            <div class="form-group full">
+              <label for="calc-bban">BBAN <span id="calc-bban-hint" class="hint"></span></label>
+              <input type="text" id="calc-bban" placeholder="Nationaler Kontobezeichner (ohne Ländercode und Prüfziffer)"
+                     autocomplete="off" required />
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">🧮 IBAN berechnen</button>
+            <button type="button" id="calc-reset" class="btn btn-secondary">↺ Zurücksetzen</button>
+          </div>
+        </form>
+        <div id="calc-result"></div>
+      </div>
+
+      <div class="info-callout">
+        <strong>Hinweis zur Berechnung</strong>
+        Die IBAN wird nach ISO 13616 berechnet. Die Prüfziffer wird mit dem Modulo-97-Verfahren (ISO 7064) ermittelt.
+        Für Deutschland: BLZ (8 Stellen) + Kontonummer (auf 10 Stellen aufgefüllt) = 18-stelliger BBAN.
+        Die vollständige IBAN hat dann 22 Zeichen.
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         TAB 2 – IBAN VALIDIEREN
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <div class="tab-content" id="tab-validate" role="tabpanel">
+      <div class="card">
+        <div class="card-title"><span class="icon">✅</span> IBAN validieren</div>
+        <form id="val-form" novalidate>
+          <div class="form-group">
+            <label for="val-iban">IBAN eingeben</label>
+            <input type="text" id="val-iban"
+                   placeholder="z. B. DE75 5121 0800 1245 1261 99"
+                   autocomplete="off"
+                   style="font-family:monospace;font-size:1.05rem;letter-spacing:.05em"
+                   required />
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">✅ IBAN prüfen</button>
+            <button type="button" id="val-reset" class="btn btn-secondary">↺ Zurücksetzen</button>
+          </div>
+        </form>
+        <div id="val-result"></div>
+      </div>
+
+      <div class="info-callout">
+        <strong>Was wird geprüft?</strong>
+        1. Strukturprüfung: Ländercode, Zeichensatz, Länge. &nbsp;
+        2. Prüfziffer-Validierung: Modulo-97-Algorithmus (ISO 7064). &nbsp;
+        3. Bankdaten-Abfrage für deutsche IBANs (BLZ-Datenbank).
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         TAB 3 – IBAN AUFSCHLÜSSELN
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <div class="tab-content" id="tab-parse" role="tabpanel">
+      <div class="card">
+        <div class="card-title"><span class="icon">🔍</span> IBAN aufschlüsseln</div>
+        <form id="parse-form" novalidate>
+          <div class="form-group">
+            <label for="parse-iban">IBAN eingeben</label>
+            <input type="text" id="parse-iban"
+                   placeholder="z. B. DE75 5121 0800 1245 1261 99"
+                   autocomplete="off"
+                   style="font-family:monospace;font-size:1.05rem;letter-spacing:.05em"
+                   required />
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">🔍 Aufschlüsseln</button>
+            <button type="button" id="parse-reset" class="btn btn-secondary">↺ Zurücksetzen</button>
+          </div>
+        </form>
+        <div id="parse-result"></div>
+      </div>
+
+      <div class="info-callout">
+        <strong>Was wird angezeigt?</strong>
+        Die IBAN wird in Ländercode, Prüfziffern und BBAN aufgeteilt.
+        Für die wichtigsten Länder (DE, AT, CH, NL, BE, FR, ES, IT, PL) werden die nationalen
+        Bankdaten (BLZ, Kontonummer, Filialnummer etc.) separat ausgewiesen.
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         TAB 4 – BLZ / BIC SUCHE
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <div class="tab-content" id="tab-blz" role="tabpanel">
+      <div class="card">
+        <div class="card-title"><span class="icon">🏦</span> BLZ / BIC-Suche</div>
+        <form id="blz-form" novalidate>
+          <div class="form-group">
+            <label for="blz-query">BLZ, BIC oder Bankname eingeben</label>
+            <input type="text" id="blz-query"
+                   placeholder="z. B. 50010517 · ING · COBADEFFXXX · Sparkasse Hamburg"
+                   autocomplete="off" required />
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">🔎 Suchen</button>
+          </div>
+        </form>
+        <div id="blz-result" class="mt-2"></div>
+      </div>
+
+      <div class="info-callout">
+        <strong>Hinweis zur Datenbank</strong>
+        Diese Datenbank enthält die wichtigsten deutschen Kreditinstitute (ca. 70 Banken).
+        Für die vollständige Bundesbank-BLZ-Datei mit über 3.500 Einträgen besuchen Sie
+        bitte <a href="https://www.bundesbank.de/de/aufgaben/unbarer-zahlungsverkehr/serviceangebot/bankleitzahlen" target="_blank" rel="noopener">bundesbank.de</a>.
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         TAB 5 – MASSENVERARBEITUNG
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <div class="tab-content" id="tab-bulk" role="tabpanel">
+      <div class="card">
+        <div class="card-title"><span class="icon">📋</span> Massenverarbeitung</div>
+        <form id="bulk-form" novalidate>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="bulk-mode">Modus</label>
+              <select id="bulk-mode">
+                <option value="validate">IBAN validieren (eine IBAN pro Zeile)</option>
+                <option value="parse">IBAN aufschlüsseln (eine IBAN pro Zeile)</option>
+                <option value="de-convert">DE-IBAN berechnen (Format: BLZ,Kontonummer)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group full" style="margin-top:.75rem">
+            <label for="bulk-input">Eingabe <span class="hint">(eine Zeile pro Datensatz)</span></label>
+            <textarea id="bulk-input" placeholder="DE75512108001245126199&#10;DE68210501700012345678&#10;AT611904300235473201&#10;..."></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">▶ Verarbeiten</button>
+            <button type="button" id="bulk-reset" class="btn btn-secondary">↺ Zurücksetzen</button>
+          </div>
+        </form>
+        <div id="bulk-result" class="mt-2"></div>
+      </div>
+
+      <div class="info-callout">
+        <strong>Formate</strong>
+        <em>IBAN validieren/aufschlüsseln:</em> Eine IBAN pro Zeile (mit oder ohne Leerzeichen).<br>
+        <em>DE-IBAN berechnen:</em> <code>BLZ,Kontonummer</code> – z.B. <code>50010517,0648489890</code>.<br>
+        Das Ergebnis kann als CSV-Datei heruntergeladen werden.
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         TAB 6 – GIROCODE GENERATOR
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <div class="tab-content" id="tab-girocode" role="tabpanel">
+      <div class="card">
+        <div class="card-title"><span class="icon">📱</span> GiroCode / EPC-QR-Code Generator</div>
+        <p class="text-sm text-muted" style="margin-bottom:1rem">
+          Erstellt einen standardisierten SEPA-QR-Code (EPC069-12), der von allen gängigen
+          Banking-Apps (Sparkasse, ING, DKB, N26 u. v. m.) gescannt werden kann.
+        </p>
+        <form id="giro-form" novalidate>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label for="giro-name">Name des Empfängers <span class="hint">(max. 70 Zeichen)</span></label>
+              <input type="text" id="giro-name" placeholder="z. B. Max Mustermann GmbH"
+                     maxlength="70" required />
+            </div>
+            <div class="form-group full">
+              <label for="giro-iban">IBAN des Empfängers</label>
+              <input type="text" id="giro-iban"
+                     placeholder="z. B. DE75 5121 0800 1245 1261 99"
+                     style="font-family:monospace" required />
+            </div>
+            <div class="form-group">
+              <label for="giro-bic">BIC / SWIFT-Code <span class="hint">(optional)</span></label>
+              <input type="text" id="giro-bic" placeholder="z. B. INGBDEFFXXX"
+                     maxlength="11" />
+            </div>
+            <div class="form-group">
+              <label for="giro-betrag">Betrag in EUR <span class="hint">(optional, 0 = offen)</span></label>
+              <input type="number" id="giro-betrag" placeholder="z. B. 29.99"
+                     min="0.01" max="999999999.99" step="0.01" />
+            </div>
+            <div class="form-group full">
+              <label for="giro-zweck">Verwendungszweck <span class="hint">(max. 140 Zeichen, unstrukturiert)</span></label>
+              <input type="text" id="giro-zweck" placeholder="z. B. Rechnung Nr. 2024-001"
+                     maxlength="140" />
+            </div>
+            <div class="form-group full">
+              <label for="giro-referenz">Referenz <span class="hint">(optional, strukturiert – z. B. RF-Referenz)</span></label>
+              <input type="text" id="giro-referenz" placeholder="z. B. RF18539007547034"
+                     maxlength="35" />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">📱 GiroCode erstellen</button>
+            <button type="button" id="giro-reset" class="btn btn-secondary">↺ Zurücksetzen</button>
+          </div>
+        </form>
+
+        <div id="giro-result" class="hidden" style="margin-top:1.5rem">
+          <div class="result-box success">
+            <div class="result-title">✓ GiroCode erstellt</div>
+            <div class="qr-wrapper">
+              <div id="qr-canvas"></div>
+              <button id="giro-download" class="btn btn-success btn-sm">⬇ PNG herunterladen</button>
+            </div>
+          </div>
+          <div class="card" style="margin-top:1rem">
+            <div class="card-title" style="font-size:.9rem">EPC-Rohdaten (für QR-Code)</div>
+            <pre id="epc-preview" class="epc-preview"></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-callout">
+        <strong>Was ist ein GiroCode?</strong>
+        Der GiroCode (EPC-QR-Code nach EPC069-12) kodiert alle Überweisungsdaten in einem
+        QR-Code. Empfänger können diesen mit ihrer Banking-App scannen und die Überweisung
+        mit einem Klick bestätigen – ohne manuelle Eingabe, ohne Tippfehler.
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         TAB 7 – LÄNDER & FORMATE
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <div class="tab-content" id="tab-countries" role="tabpanel">
+      <div class="card">
+        <div class="card-title"><span class="icon">🌍</span> Alle IBAN-Länder &amp; Formate</div>
+
+        <div class="filter-bar">
+          <input type="text" id="country-filter" placeholder="Land oder Ländercode suchen …" />
+          <label style="display:flex;align-items:center;gap:.4rem;white-space:nowrap;font-size:.88rem;cursor:pointer">
+            <input type="checkbox" id="filter-sepa" />
+            Nur SEPA-Länder
+          </label>
+          <span id="country-count" class="text-sm text-muted" style="white-space:nowrap"></span>
+        </div>
+
+        <div class="country-table-wrapper">
+          <table class="country-table">
+            <thead>
+              <tr>
+                <th data-sort="code">Code <span class="sort-icon"></span></th>
+                <th data-sort="name">Land <span class="sort-icon">↑</span></th>
+                <th data-sort="length" style="text-align:center">Länge <span class="sort-icon"></span></th>
+                <th>IBAN-Format</th>
+                <th style="text-align:center">SEPA</th>
+              </tr>
+            </thead>
+            <tbody id="country-tbody"></tbody>
+          </table>
+        </div>
+
+        <p class="text-sm text-muted mt-2">
+          <strong>Legende:</strong>
+          B = Bankcode · S = Filialcode · C = Kontonummer · k = Prüfziffer · X = Sonstiges
+        </p>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+</main>
+
+<!-- ═══ FOOTER ════════════════════════════════════════════════════════════════ -->
+<footer>
+  <p>IBAN-Rechner – alle Berechnungen erfolgen ausschließlich lokal im Browser. Keine Daten werden übertragen.</p>
+  <p style="margin-top:.3rem">
+    Standard: <a href="https://www.iso.org/standard/41031.html" target="_blank" rel="noopener">ISO 13616</a> ·
+    GiroCode: <a href="https://www.europeanpaymentscouncil.eu/document-library/guidance-documents/quick-response-code-guidelines-enable-data-capture-initiation" target="_blank" rel="noopener">EPC069-12</a>
+  </p>
+</footer>
+
+<!-- ═══ SCRIPTS ═══════════════════════════════════════════════════════════════ -->
+<!-- QR-Code-Bibliothek (qrcodejs, MIT-Lizenz) -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<!-- IBAN-Logik -->
+<script src="js/iban.js"></script>
+<!-- BLZ-Datenbank -->
+<script src="js/blz.js"></script>
+<!-- App -->
+<script src="js/app.js"></script>
+
+</body>
+</html>
