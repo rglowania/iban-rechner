@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IBAN-Rechner</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+
+/* ═══════════════════════════════════════════════════════════════
+   G-DESIGN — Template v1.1
+   ═══════════════════════════════════════════════════════════════ */
+:root,[data-theme="dark"]{
+  --bg:#0c1410;--surface:#13201a;--surface2:#192b22;--border:#213328;
+  --accent:#5d9e7a;--accent-lt:#89c4a2;--accent-dim:rgba(93,158,122,0.13);
+  --text:#ddeee5;--text-muted:#6e9480;
+}
+[data-theme="light"]{
+  --bg:#f0f7f3;--surface:#ffffff;--surface2:#e6f2eb;--border:#bdd8c8;
+  --accent:#2e7a50;--accent-lt:#1e5c3a;--accent-dim:rgba(46,122,80,0.10);
+  --text:#0f1f16;--text-muted:#4d7a5e;
+}
+@media(prefers-color-scheme:light){
+  :root:not([data-theme]){
+    --bg:#f0f7f3;--surface:#ffffff;--surface2:#e6f2eb;--border:#bdd8c8;
+    --accent:#2e7a50;--accent-lt:#1e5c3a;--accent-dim:rgba(46,122,80,0.10);
+    --text:#0f1f16;--text-muted:#4d7a5e;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'IBM Plex Sans',sans-serif;font-weight:300;
+  min-height:100vh;padding:40px 20px 80px;
+  transition:background .25s,color .25s;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(93,158,122,0.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(93,158,122,0.04) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.container{max-width:900px;margin:0 auto;position:relative;z-index:1;}
+.theme-toggle{
+  position:fixed;top:18px;right:20px;display:flex;gap:3px;
+  z-index:1000;background:var(--surface);border:1px solid var(--border);padding:4px;
+}
+.theme-btn{
+  width:28px;height:28px;background:transparent;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text-muted);transition:all .2s;padding:0;
+}
+.theme-btn:hover{color:var(--accent);}
+.theme-btn.active{color:var(--accent);background:var(--accent-dim);}
+.theme-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+h1{font-family:'Playfair Display',serif;font-size:clamp(26px,5vw,44px);font-weight:600;line-height:1.15;color:var(--text);margin-bottom:10px;}
+h1 span{color:var(--accent);}
+h2{font-family:'Playfair Display',serif;font-size:clamp(18px,3vw,26px);font-weight:600;color:var(--text);margin-bottom:8px;}
+.subtitle{font-size:12px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace;letter-spacing:0.5px;}
+.badge{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent-dim);padding:4px 14px;margin-bottom:18px;}
+.card-title{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:18px;}
+.hint{font-size:10px;color:var(--text-muted);margin-top:5px;font-family:'IBM Plex Mono',monospace;line-height:1.5;}
+.disclaimer{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted);line-height:1.7;opacity:.7;margin-top:32px;}
+footer{text-align:center;padding:32px 0 0;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--text-muted);opacity:.6;}
+
+/* ═══════════════════════════════════════════════════════════════
+   APP-SPEZIFISCHES CSS
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Tab-Navigation */
+.tabs{display:flex;gap:0;margin-bottom:32px;border-bottom:2px solid var(--border);}
+.tab-btn{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  padding:12px 24px;background:transparent;border:none;color:var(--text-muted);cursor:pointer;
+  position:relative;transition:all .2s;
+}
+.tab-btn:hover{color:var(--accent);}
+.tab-btn.active{color:var(--accent);}
+.tab-btn.active::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:var(--accent);}
+
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* Karte */
+.card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);padding:28px 32px;margin-bottom:20px;}
+
+/* Input */
+.field{margin-bottom:20px;}
+.field label{display:block;}
+.field-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:7px;}
+.field input,.field select{
+  width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  font-family:'IBM Plex Mono',monospace;font-size:14px;padding:11px 14px;outline:none;
+  transition:border-color .2s;
+}
+.field input:focus,.field select:focus{border-color:var(--accent);}
+.field input::placeholder{color:var(--text-muted);opacity:.6;}
+
+/* Button */
+.btn{
+  width:100%;padding:14px;background:var(--accent);color:#fff;border:none;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;
+  cursor:pointer;transition:opacity .2s;
+}
+.btn:hover{opacity:.85;}
+.btn-secondary{background:transparent;border:1px solid var(--accent);color:var(--accent);}
+
+/* Grid */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:600px){.grid-2{grid-template-columns:1fr;}.tab-btn{padding:10px 14px;font-size:9px;}}
+
+/* Ergebnis */
+.result-box{
+  background:var(--accent-dim);border:1px solid var(--accent);border-left:3px solid var(--accent);
+  padding:24px 28px;margin-top:24px;display:none;
+}
+.result-box.show{display:block;}
+.result-iban{
+  font-family:'Playfair Display',serif;font-size:clamp(20px,4vw,32px);
+  color:var(--accent);word-break:break-all;margin:10px 0 18px;letter-spacing:3px;
+}
+.result-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.result-row:last-child{border-bottom:none;}
+.result-row .rk{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);}
+.result-row .rv{font-family:'IBM Plex Mono',monospace;font-weight:500;color:var(--text);}
+
+/* Status-Badges */
+.status{display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;}
+.status.ok{background:rgba(93,158,122,0.15);color:var(--accent);border:1px solid var(--accent);}
+.status.error{background:rgba(200,60,60,0.12);color:#e07070;border:1px solid rgba(200,60,60,0.35);}
+.status.warn{background:rgba(200,160,60,0.12);color:#c8a03c;border:1px solid rgba(200,160,60,0.3);}
+.status svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+
+/* IBAN-Darstellung mit Highlighting */
+.iban-display{font-family:'IBM Plex Mono',monospace;font-size:clamp(15px,3vw,22px);word-break:break-all;margin:12px 0;}
+.iban-display .ic{color:var(--text-muted);}
+.iban-display .ip{color:#c8a03c;}
+.iban-display .ib{color:var(--accent-lt);}
+.iban-display .ik{color:var(--text);}
+
+/* Copy-Button */
+.copy-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  background:transparent;border:1px solid var(--border);color:var(--text-muted);
+  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;
+  padding:7px 14px;cursor:pointer;transition:all .2s;margin-top:12px;
+}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);}
+.copy-btn svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+
+/* BLZ-Suche Tabelle */
+.blz-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:12px;}
+.blz-table th{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);text-align:left;padding:8px 12px;border-bottom:2px solid var(--border);}
+.blz-table td{padding:9px 12px;border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;vertical-align:top;}
+.blz-table tr:last-child td{border-bottom:none;}
+.blz-table tr:hover td{background:var(--accent-dim);}
+
+/* Aufbau-Legende */
+.iban-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;}
+.legend-item{display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted);}
+.legend-dot{width:10px;height:10px;flex-shrink:0;}
+
+/* Error / Info Messages */
+.msg{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:12px 16px;margin-top:14px;display:none;}
+.msg.show{display:block;}
+.msg.error{background:rgba(200,60,60,0.08);border-left:3px solid #e07070;color:#e07070;}
+.msg.info{background:var(--accent-dim);border-left:3px solid var(--accent);color:var(--text-muted);}
+
+</style>
+</head>
+<body>
+
+<!-- Theme-Toggle -->
+<div class="theme-toggle">
+  <button class="theme-btn" id="btn-dark" onclick="setTheme('dark')" title="Dunkel">
+    <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+  <button class="theme-btn" id="btn-system" onclick="setTheme('system')" title="System">
+    <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+  </button>
+  <button class="theme-btn" id="btn-light" onclick="setTheme('light')" title="Hell">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  </button>
+</div>
+
+<div class="container">
+
+  <header style="text-align:center;margin-bottom:36px;">
+    <div class="badge">Bankverbindung</div>
+    <h1><span>IBAN</span>-Rechner</h1>
+    <p class="subtitle">IBAN berechnen · IBAN prüfen · BLZ &amp; BIC suchen · SEPA-Standard</p>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('pruefen')">IBAN prüfen</button>
+    <button class="tab-btn" onclick="showTab('berechnen')">IBAN berechnen</button>
+    <button class="tab-btn" onclick="showTab('blzsuche')">BLZ / BIC suchen</button>
+    <button class="tab-btn" onclick="showTab('info')">Aufbau &amp; Info</button>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB 1: IBAN BERECHNEN
+       ══════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-berechnen">
+
+    <div class="card">
+      <div class="card-title">Bankverbindung eingeben</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>
+            <span class="field-label">Bankleitzahl (BLZ)</span>
+            <input type="text" id="blz-input" placeholder="z. B. 37040044" maxlength="8" oninput="onBLZInput()">
+          </label>
+          <p class="hint" id="bank-hint-calc">— Institut wird automatisch erkannt</p>
+        </div>
+        <div class="field">
+          <label>
+            <span class="field-label">Kontonummer</span>
+            <input type="text" id="kto-input" placeholder="z. B. 0532013000" maxlength="10">
+          </label>
+          <p class="hint">Max. 10 Stellen · wird ggf. linksbündig mit Nullen aufgefüllt</p>
+        </div>
+      </div>
+      <div class="field">
+        <label>
+          <span class="field-label">Land</span>
+          <select id="land-select">
+            <option value="DE">🇩🇪 Deutschland (DE) — 22-stellige IBAN</option>
+            <option value="AT">🇦🇹 Österreich (AT) — 20-stellige IBAN</option>
+            <option value="CH">🇨🇭 Schweiz (CH) — 21-stellige IBAN</option>
+            <option value="LU">🇱🇺 Luxemburg (LU) — 20-stellige IBAN</option>
+            <option value="NL">🇳🇱 Niederlande (NL) — 18-stellige IBAN</option>
+            <option value="BE">🇧🇪 Belgien (BE) — 16-stellige IBAN</option>
+            <option value="FR">🇫🇷 Frankreich (FR) — 27-stellige IBAN</option>
+            <option value="ES">🇪🇸 Spanien (ES) — 24-stellige IBAN</option>
+            <option value="IT">🇮🇹 Italien (IT) — 27-stellige IBAN</option>
+            <option value="PL">🇵🇱 Polen (PL) — 28-stellige IBAN</option>
+          </select>
+        </label>
+        <p class="hint">Für ausländische IBANs: Eingabe der nationalen Kontonummer gemäß Landesformat</p>
+      </div>
+      <div id="msg-calc" class="msg error"></div>
+      <button class="btn" onclick="berechneIBAN()">IBAN berechnen</button>
+    </div>
+
+    <div class="result-box" id="result-berechnen">
+      <div class="card-title">Berechnete IBAN</div>
+      <div class="iban-display" id="iban-display-calc"></div>
+      <button class="copy-btn" onclick="copyIBAN('iban-raw-calc')">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        IBAN kopieren
+      </button>
+      <span id="iban-raw-calc" style="display:none;"></span>
+
+      <div style="margin-top:24px;">
+        <div class="result-row"><span class="rk">Ländercode</span><span class="rv" id="r-land">—</span></div>
+        <div class="result-row"><span class="rk">Prüfziffer</span><span class="rv" id="r-pruef">—</span></div>
+        <div class="result-row"><span class="rk">Bankleitzahl</span><span class="rv" id="r-blz">—</span></div>
+        <div class="result-row"><span class="rk">Kontonummer</span><span class="rv" id="r-kto">—</span></div>
+        <div class="result-row"><span class="rk">Kreditinstitut</span><span class="rv" id="r-bank">—</span></div>
+        <div class="result-row"><span class="rk">BIC (SWIFT)</span><span class="rv" id="r-bic">—</span></div>
+        <div class="result-row"><span class="rk">IBAN-Länge</span><span class="rv" id="r-len">—</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB 2: IBAN PRÜFEN
+       ══════════════════════════════════════ -->
+  <div class="tab-panel active" id="tab-pruefen">
+
+    <div class="card">
+      <div class="card-title">IBAN eingeben</div>
+      <div class="field">
+        <label>
+          <span class="field-label">IBAN</span>
+          <input type="text" id="iban-input" placeholder="z. B. DE89370400440532013000" maxlength="34" oninput="formatIBANInput(this)" style="letter-spacing:2px;">
+        </label>
+        <p class="hint">Leerzeichen werden automatisch entfernt · Groß-/Kleinschreibung egal</p>
+      </div>
+      <div id="msg-pruefen" class="msg error"></div>
+      <button class="btn" onclick="pruefeIBAN()">IBAN prüfen</button>
+    </div>
+
+    <div class="result-box" id="result-pruefen">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+        <div class="card-title" style="margin-bottom:0;">Prüfungsergebnis</div>
+        <div id="status-badge"></div>
+      </div>
+
+      <div class="iban-display" id="iban-display-check"></div>
+      <div class="iban-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--text-muted);"></div>Ländercode</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#c8a03c;"></div>Prüfziffer</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--accent-lt);"></div>Bankleitzahl</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--text);"></div>Kontonummer</div>
+      </div>
+      <button class="copy-btn" onclick="copyIBAN('iban-raw-check')" style="margin-top:16px;">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        IBAN kopieren
+      </button>
+      <span id="iban-raw-check" style="display:none;"></span>
+
+      <div style="margin-top:24px;">
+        <div class="result-row"><span class="rk">Land</span><span class="rv" id="p-land">—</span></div>
+        <div class="result-row"><span class="rk">Prüfziffer</span><span class="rv" id="p-pruef">—</span></div>
+        <div class="result-row" id="p-blz-row"><span class="rk">Bankleitzahl (BLZ)</span><span class="rv" id="p-blz">—</span></div>
+        <div class="result-row" id="p-kto-row"><span class="rk">Kontonummer</span><span class="rv" id="p-kto">—</span></div>
+        <div class="result-row"><span class="rk">Kreditinstitut</span><span class="rv" id="p-bank">—</span></div>
+        <div class="result-row"><span class="rk">BIC (SWIFT)</span><span class="rv" id="p-bic">—</span></div>
+        <div class="result-row"><span class="rk">Prüfziffer korrekt</span><span class="rv" id="p-check">—</span></div>
+        <div class="result-row"><span class="rk">IBAN-Länge</span><span class="rv" id="p-len">—</span></div>
+        <div class="result-row"><span class="rk">SEPA-fähig</span><span class="rv" id="p-sepa">—</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB 3: BLZ / BIC SUCHEN
+       ══════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-blzsuche">
+
+    <div class="card">
+      <div class="card-title">Suche nach BLZ, BIC oder Bankname</div>
+      <div class="field">
+        <label>
+          <span class="field-label">Suchbegriff</span>
+          <input type="text" id="blz-search-input" placeholder="BLZ, BIC oder Name (z. B. Commerzbank, COBADEFFXXX, 20040000)" oninput="blzSuche()">
+        </label>
+        <p class="hint">Mindestens 3 Zeichen · Suche in allen Feldern</p>
+      </div>
+      <div id="blz-result-count" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:4px;"></div>
+    </div>
+
+    <div id="blz-table-container" style="display:none;">
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table class="blz-table">
+          <thead>
+            <tr>
+              <th>BLZ</th>
+              <th>Institut</th>
+              <th>BIC (SWIFT)</th>
+              <th>Ort</th>
+              <th>PLZ</th>
+            </tr>
+          </thead>
+          <tbody id="blz-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="msg-blz" class="msg info" style="display:none;"></div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB 4: AUFBAU & INFO
+       ══════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-info">
+
+    <div class="card">
+      <div class="card-title">Aufbau einer deutschen IBAN (22 Stellen)</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:clamp(14px,3vw,22px);letter-spacing:3px;color:var(--text);margin:16px 0;word-break:break-all;">
+        <span style="color:var(--text-muted);">DE</span><span style="color:#c8a03c;">89</span><span style="color:var(--accent-lt);">37040044</span><span style="color:var(--text);">0532013000</span>
+      </div>
+      <div class="iban-legend" style="margin-bottom:20px;">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--text-muted);"></div><span>Ländercode (2)</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#c8a03c;"></div><span>Prüfziffer (2)</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--accent-lt);"></div><span>BLZ (8)</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--text);"></div><span>Kontonummer (10)</span></div>
+      </div>
+      <div style="display:grid;gap:12px;">
+        <div class="result-row"><span class="rk">Ländercode</span><span class="rv" style="font-size:12px;text-align:right;max-width:65%;">2 Buchstaben nach ISO 3166-1 (DE, AT, CH …)</span></div>
+        <div class="result-row"><span class="rk">Prüfziffer</span><span class="rv" style="font-size:12px;text-align:right;max-width:65%;">2-stellig, berechnet nach MOD-97-Verfahren</span></div>
+        <div class="result-row"><span class="rk">Bankleitzahl</span><span class="rv" style="font-size:12px;text-align:right;max-width:65%;">8-stellig (Deutschland), identifiziert die Bank</span></div>
+        <div class="result-row"><span class="rk">Kontonummer</span><span class="rv" style="font-size:12px;text-align:right;max-width:65%;">10-stellig, mit führenden Nullen aufgefüllt</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">IBAN-Längen nach Land</div>
+      <table class="blz-table">
+        <thead><tr><th>Land</th><th>Code</th><th>Länge</th><th>Beispiel</th></tr></thead>
+        <tbody>
+          <tr><td>Deutschland</td><td>DE</td><td>22</td><td>DE89 3704 0044 0532 0130 00</td></tr>
+          <tr><td>Österreich</td><td>AT</td><td>20</td><td>AT61 1904 3002 3457 3201</td></tr>
+          <tr><td>Schweiz</td><td>CH</td><td>21</td><td>CH56 0483 5012 3456 7800 9</td></tr>
+          <tr><td>Luxemburg</td><td>LU</td><td>20</td><td>LU28 0019 4006 4475 0000</td></tr>
+          <tr><td>Niederlande</td><td>NL</td><td>18</td><td>NL91 ABNA 0417 1643 00</td></tr>
+          <tr><td>Belgien</td><td>BE</td><td>16</td><td>BE68 5390 0754 7034</td></tr>
+          <tr><td>Frankreich</td><td>FR</td><td>27</td><td>FR76 3000 6000 0112 3456 7890 189</td></tr>
+          <tr><td>Spanien</td><td>ES</td><td>24</td><td>ES91 2100 0418 4502 0005 1332</td></tr>
+          <tr><td>Italien</td><td>IT</td><td>27</td><td>IT60 X054 2811 1010 0000 0123 456</td></tr>
+          <tr><td>Polen</td><td>PL</td><td>28</td><td>PL61 1090 1014 0000 0712 1981 2874</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Berechnung der Prüfziffer (MOD 97)</div>
+      <div style="font-size:13px;line-height:1.8;color:var(--text);">
+        <p style="margin-bottom:10px;">Die IBAN-Prüfziffer wird nach dem <strong>ISO 7064 MOD-97-10-Verfahren</strong> berechnet:</p>
+        <ol style="padding-left:20px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-muted);line-height:2;">
+          <li>Kontonummer auf 10 Stellen mit führenden Nullen auffüllen</li>
+          <li>BLZ + Kontonummer zusammensetzen (BBAN)</li>
+          <li>Ländercode + "00" anhängen: BBAN + "DE00"</li>
+          <li>Buchstaben durch Zahlen ersetzen (A=10, B=11, …, Z=35)</li>
+          <li>98 − (Zahl MOD 97) = Prüfziffer</li>
+          <li>Prüfziffer ggf. mit führender Null auf 2 Stellen formatieren</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Was ist ein BIC / SWIFT-Code?</div>
+      <div style="font-size:13px;line-height:1.8;color:var(--text);">
+        <p style="margin-bottom:10px;">Der <strong>BIC</strong> (Bank Identifier Code) identifiziert Kreditinstitute weltweit im internationalen Zahlungsverkehr. Aufbau:</p>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:16px;letter-spacing:3px;color:var(--text);margin:12px 0;">
+          <span style="color:var(--accent-lt);">COBA</span><span style="color:#c8a03c;">DE</span><span style="color:var(--text-muted);">FF</span><span style="color:var(--text);">XXX</span>
+        </div>
+        <div class="result-row"><span class="rk">Bankcode (4)</span><span class="rv" style="font-size:12px;">Kürzel des Instituts</span></div>
+        <div class="result-row"><span class="rk">Ländercode (2)</span><span class="rv" style="font-size:12px;">ISO-Ländercode</span></div>
+        <div class="result-row"><span class="rk">Ortscode (2)</span><span class="rv" style="font-size:12px;">Stadt / Zeitzone</span></div>
+        <div class="result-row"><span class="rk">Filialcode (3)</span><span class="rv" style="font-size:12px;">optional, "XXX" = Hauptsitz</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="disclaimer">Alle Berechnungen erfolgen nach dem offiziellen ISO-7064-MOD-97-Verfahren. Bankdaten basieren auf ausgewählten, öffentlich bekannten Instituten. Es wird keine Verbindung zu Banken hergestellt und keine Kontoexistenz geprüft. Keine Gewähr für Richtigkeit und Vollständigkeit · Kein Ersatz für Bankauskunft</p>
+
+</div>
+
+<footer>Robin Glowania</footer>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   THEME
+   ══════════════════════════════════════════════════════ */
+function setTheme(t) {
+  if (t === 'system') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', t);
+  try { localStorage.setItem('g-theme', t); } catch(e){}
+  document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+  var btn = document.getElementById('btn-' + t);
+  if (btn) btn.classList.add('active');
+}
+(function(){
+  var saved = 'system';
+  try { saved = localStorage.getItem('g-theme') || 'system'; } catch(e){}
+  setTheme(saved);
+})();
+
+/* ══════════════════════════════════════════════════════
+   TABS
+   ══════════════════════════════════════════════════════ */
+function showTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+/* ══════════════════════════════════════════════════════
+   BANKDATEN (repräsentative Auswahl dt. Institute)
+   ══════════════════════════════════════════════════════ */
+const BANKS = [
+  {blz:'10000000',name:'Bundesbank',bic:'MARKDEFF',ort:'Berlin',plz:'10117'},
+  {blz:'10010010',name:'Postbank',bic:'PBNKDEFF',ort:'Berlin',plz:'10117'},
+  {blz:'10020000',name:'Berliner Bank (Deutsche Bank)',bic:'DEUTDEDB',ort:'Berlin',plz:'10117'},
+  {blz:'10020200',name:'BHF-BANK',bic:'BHFBDEFF',ort:'Berlin',plz:'10117'},
+  {blz:'10020900',name:'UniCredit Bank',bic:'HYVEDEMM',ort:'Berlin',plz:'10117'},
+  {blz:'10030600',name:'National-Bank',bic:'NBAGDE3E',ort:'Berlin',plz:'10117'},
+  {blz:'10040000',name:'Commerzbank Berlin',bic:'COBADEBB',ort:'Berlin',plz:'10117'},
+  {blz:'10050000',name:'Landesbank Berlin – Berliner Sparkasse',bic:'BELADEBE',ort:'Berlin',plz:'10117'},
+  {blz:'10060237',name:'Volksbank Berlin',bic:'BEVODEBB',ort:'Berlin',plz:'10117'},
+  {blz:'10070000',name:'Deutsche Bank Berlin',bic:'DEUTDEDB',ort:'Berlin',plz:'10117'},
+  {blz:'10090000',name:'Berliner Volksbank',bic:'BEVODEBB',ort:'Berlin',plz:'10178'},
+  {blz:'20000000',name:'Bundesbank Hamburg',bic:'MARKDEFF',ort:'Hamburg',plz:'20095'},
+  {blz:'20010020',name:'Postbank Hamburg',bic:'PBNKDEFF',ort:'Hamburg',plz:'20095'},
+  {blz:'20041133',name:'Comdirect',bic:'COBADEHD',ort:'Quickborn',plz:'25451'},
+  {blz:'20050550',name:'Hamburger Sparkasse (Haspa)',bic:'HASPDEHHXXX',ort:'Hamburg',plz:'20095'},
+  {blz:'20060000',name:'DZ BANK Hamburg',bic:'GENODEFF',ort:'Hamburg',plz:'20095'},
+  {blz:'20080000',name:'Commerzbank Hamburg',bic:'COBADEHHXXX',ort:'Hamburg',plz:'20095'},
+  {blz:'20090700',name:'Hamburger Volksbank',bic:'GENODEF1HH2',ort:'Hamburg',plz:'20095'},
+  {blz:'20150000',name:'Hamburger Sparkasse',bic:'HASPDEHHXXX',ort:'Hamburg',plz:'22767'},
+  {blz:'21050170',name:'Sparkasse Holstein',bic:'NOLADE21HOL',ort:'Bad Oldesloe',plz:'23840'},
+  {blz:'25040066',name:'Commerzbank Hannover',bic:'COBADEFFXXX',ort:'Hannover',plz:'30159'},
+  {blz:'25050180',name:'Sparkasse Hannover',bic:'SPKHDE2HXXX',ort:'Hannover',plz:'30159'},
+  {blz:'30000000',name:'Bundesbank Köln',bic:'MARKDEFF',ort:'Düsseldorf',plz:'40212'},
+  {blz:'30010700',name:'Postbank Köln',bic:'PBNKDEFF',ort:'Köln',plz:'50667'},
+  {blz:'30020900',name:'UniCredit Bank Düsseldorf',bic:'HYVEDEMM',ort:'Düsseldorf',plz:'40212'},
+  {blz:'30040000',name:'Commerzbank Düsseldorf',bic:'COBADEDDXXX',ort:'Düsseldorf',plz:'40212'},
+  {blz:'30050110',name:'Stadtsparkasse Düsseldorf',bic:'DUSSDEDDXXX',ort:'Düsseldorf',plz:'40212'},
+  {blz:'30060010',name:'DZ BANK Düsseldorf',bic:'GENODEFF',ort:'Düsseldorf',plz:'40212'},
+  {blz:'30070024',name:'Deutsche Bank Düsseldorf',bic:'DEUTDEDD',ort:'Düsseldorf',plz:'40212'},
+  {blz:'36010043',name:'Postbank Köln',bic:'PBNKDEFF',ort:'Bonn',plz:'53113'},
+  {blz:'37000000',name:'Bundesbank Köln',bic:'MARKDEFF',ort:'Köln',plz:'50667'},
+  {blz:'37010050',name:'Postbank Köln',bic:'PBNKDEFF',ort:'Köln',plz:'50667'},
+  {blz:'37040044',name:'Commerzbank Köln',bic:'COBADEFFXXX',ort:'Köln',plz:'50667'},
+  {blz:'37050198',name:'Sparkasse KölnBonn',bic:'COLSDE33XXX',ort:'Köln',plz:'50667'},
+  {blz:'37060590',name:'Volksbank Köln Bonn',bic:'GENODED1CGN',ort:'Köln',plz:'50667'},
+  {blz:'37070060',name:'Deutsche Bank Köln',bic:'DEUTDEDB',ort:'Köln',plz:'50667'},
+  {blz:'37080040',name:'Commerzbank Köln (alt)',bic:'DRESDEFF370',ort:'Köln',plz:'50667'},
+  {blz:'38040007',name:'Commerzbank Aachen',bic:'COBADEFFXXX',ort:'Aachen',plz:'52062'},
+  {blz:'40000000',name:'Bundesbank Dortmund',bic:'MARKDEFF',ort:'Dortmund',plz:'44135'},
+  {blz:'40010075',name:'Postbank Dortmund',bic:'PBNKDEFF',ort:'Dortmund',plz:'44135'},
+  {blz:'40050150',name:'Sparkasse Dortmund',bic:'DORTDE33XXX',ort:'Dortmund',plz:'44135'},
+  {blz:'43060967',name:'Volksbank Ruhr Mitte',bic:'GENODEM1GBU',ort:'Gelsenkirchen',plz:'45879'},
+  {blz:'44010046',name:'Postbank Essen',bic:'PBNKDEFF',ort:'Essen',plz:'45127'},
+  {blz:'44040037',name:'Commerzbank Essen',bic:'COBADEFFXXX',ort:'Essen',plz:'45127'},
+  {blz:'44050201',name:'Sparkasse Essen',bic:'SPESDE3EXXX',ort:'Essen',plz:'45127'},
+  {blz:'50000000',name:'Bundesbank Frankfurt am Main',bic:'MARKDEFFXXX',ort:'Frankfurt am Main',plz:'60311'},
+  {blz:'50010517',name:'ING-DiBa',bic:'INGDDEFFXXX',ort:'Frankfurt am Main',plz:'60628'},
+  {blz:'50010900',name:'Postbank Frankfurt',bic:'PBNKDEFFXXX',ort:'Frankfurt am Main',plz:'60311'},
+  {blz:'50020200',name:'BHF-BANK Frankfurt',bic:'BHFBDEFF500',ort:'Frankfurt am Main',plz:'60311'},
+  {blz:'50020500',name:'Degussa Bank',bic:'DEGUDEFFXXX',ort:'Frankfurt am Main',plz:'60487'},
+  {blz:'50030000',name:'SEB Frankfurt',bic:'ESSEDEFFXXX',ort:'Frankfurt am Main',plz:'60311'},
+  {blz:'50040000',name:'Commerzbank Frankfurt',bic:'COBADEFFXXX',ort:'Frankfurt am Main',plz:'60311'},
+  {blz:'50050201',name:'Frankfurter Sparkasse',bic:'HELADEF1822',ort:'Frankfurt am Main',plz:'60311'},
+  {blz:'50060400',name:'DZ BANK Frankfurt',bic:'GENODEFFXXX',ort:'Frankfurt am Main',plz:'60311'},
+  {blz:'50070010',name:'Deutsche Bank Frankfurt',bic:'DEUTDEDBFRA',ort:'Frankfurt am Main',plz:'60311'},
+  {blz:'50080000',name:'Commerzbank Frankfurt (Dresdner)',bic:'DRESDEFFXXX',ort:'Frankfurt am Main',plz:'60311'},
+  {blz:'50090500',name:'Frankfurter Volksbank',bic:'FFVBDEFI',ort:'Frankfurt am Main',plz:'60311'},
+  {blz:'51050015',name:'Nassauische Sparkasse',bic:'NASSDE55XXX',ort:'Wiesbaden',plz:'65185'},
+  {blz:'55050120',name:'Sparkasse Rhein Nahe',bic:'MALADE51KRE',ort:'Bad Kreuznach',plz:'55543'},
+  {blz:'57040044',name:'Commerzbank Kaiserslautern',bic:'COBADEFFXXX',ort:'Kaiserslautern',plz:'67655'},
+  {blz:'60000000',name:'Bundesbank Stuttgart',bic:'MARKDEFF',ort:'Stuttgart',plz:'70173'},
+  {blz:'60010070',name:'Postbank Stuttgart',bic:'PBNKDEFF',ort:'Stuttgart',plz:'70173'},
+  {blz:'60020030',name:'LBBW – Landesbank Baden-Württemberg',bic:'SOLADEST600',ort:'Stuttgart',plz:'70173'},
+  {blz:'60040071',name:'Commerzbank Stuttgart',bic:'COBADEFFXXX',ort:'Stuttgart',plz:'70173'},
+  {blz:'60050101',name:'Baden-Württembergische Bank (BW-Bank)',bic:'SOLADEST',ort:'Stuttgart',plz:'70173'},
+  {blz:'60070070',name:'Deutsche Bank Stuttgart',bic:'DEUTDEDB600',ort:'Stuttgart',plz:'70173'},
+  {blz:'60090100',name:'Volksbank Stuttgart',bic:'VOBADESSXXX',ort:'Stuttgart',plz:'70173'},
+  {blz:'63050000',name:'Sparkasse Ulm',bic:'SOLADES1ULM',ort:'Ulm',plz:'89073'},
+  {blz:'66010075',name:'Postbank Karlsruhe',bic:'PBNKDEFF',ort:'Karlsruhe',plz:'76133'},
+  {blz:'66050101',name:'Sparkasse Karlsruhe',bic:'KARSDE66XXX',ort:'Karlsruhe',plz:'76133'},
+  {blz:'68050101',name:'Sparkasse Freiburg–Nördlicher Breisgau',bic:'FRSPDE66XXX',ort:'Freiburg im Breisgau',plz:'79098'},
+  {blz:'70000000',name:'Bundesbank München',bic:'MARKDEFF',ort:'München',plz:'80313'},
+  {blz:'70010080',name:'Postbank München',bic:'PBNKDEFFXXX',ort:'München',plz:'80313'},
+  {blz:'70020270',name:'UniCredit Bank (HypoVereinsbank)',bic:'HYVEDEMMXXX',ort:'München',plz:'80333'},
+  {blz:'70040041',name:'Commerzbank München',bic:'COBADEFFXXX',ort:'München',plz:'80333'},
+  {blz:'70050000',name:'Bayerische Landesbank (BayernLB)',bic:'BYLADEMM',ort:'München',plz:'80333'},
+  {blz:'70150000',name:'Stadtsparkasse München',bic:'SSKMDEMMXXX',ort:'München',plz:'80313'},
+  {blz:'70160000',name:'Münchner Hypothekenbank',bic:'MHBEDEMMXXX',ort:'München',plz:'80333'},
+  {blz:'70162672',name:'Volksbank München',bic:'GENODEF1M03',ort:'München',plz:'80333'},
+  {blz:'70190000',name:'Raiffeisenbank München',bic:'GENODEF1M05',ort:'München',plz:'80333'},
+  {blz:'70045050',name:'Comdirect Bank',bic:'COBADEHD',ort:'Quickborn',plz:'25451'},
+  {blz:'20041155',name:'ING-DiBa (Direktbank)',bic:'INGDDEFF',ort:'Frankfurt am Main',plz:'60628'},
+  {blz:'30010700',name:'DKB – Deutsche Kreditbank',bic:'SSKMDEMMXXX',ort:'Berlin',plz:'10117'},
+  {blz:'12030000',name:'DKB – Deutsche Kreditbank',bic:'SSKMDEMMXXX',ort:'Berlin',plz:'10117'},
+  {blz:'76010085',name:'Postbank Nürnberg',bic:'PBNKDEFF',ort:'Nürnberg',plz:'90402'},
+  {blz:'76050101',name:'Sparkasse Nürnberg',bic:'SSKNDE77XXX',ort:'Nürnberg',plz:'90402'},
+  {blz:'76060618',name:'Volksbank Raiffeisenbank Nürnberg',bic:'GENODEF1N02',ort:'Nürnberg',plz:'90402'},
+  {blz:'80000000',name:'Bundesbank Leipzig',bic:'MARKDEFF',ort:'Leipzig',plz:'04109'},
+  {blz:'80050000',name:'Sachsen Bank',bic:'SALADE61XXX',ort:'Leipzig',plz:'04109'},
+  {blz:'80053722',name:'Sparkasse Leipzig',bic:'WELADE8LXXX',ort:'Leipzig',plz:'04109'},
+  {blz:'85000000',name:'Bundesbank Dresden',bic:'MARKDEFF',ort:'Dresden',plz:'01067'},
+  {blz:'85050300',name:'Ostsächsische Sparkasse Dresden',bic:'OSDDDE81XXX',ort:'Dresden',plz:'01067'},
+  {blz:'86010090',name:'Postbank Dresden',bic:'PBNKDEFF',ort:'Dresden',plz:'01067'},
+  {blz:'86050000',name:'Sparkasse Chemnitz',bic:'CHEKDE81XXX',ort:'Chemnitz',plz:'09111'},
+  {blz:'83050000',name:'Sparkasse Vogtland',bic:'WELADED1PLZ',ort:'Plauen',plz:'08523'},
+  {blz:'20080055',name:'Commerzbank Hamburg',bic:'COBADEHH',ort:'Hamburg',plz:'20095'},
+];
+
+/* ══════════════════════════════════════════════════════
+   HILFSFUNKTIONEN IBAN
+   ══════════════════════════════════════════════════════ */
+
+// Buchstaben → Zahlen für MOD97
+function letterToNum(s) {
+  return s.toUpperCase().split('').map(c => {
+    const code = c.charCodeAt(0);
+    return code >= 65 && code <= 90 ? (code - 55).toString() : c;
+  }).join('');
+}
+
+// MOD97 für große Zahlen (als String)
+function mod97(numStr) {
+  let remainder = 0;
+  for (let i = 0; i < numStr.length; i++) {
+    remainder = (remainder * 10 + parseInt(numStr[i])) % 97;
+  }
+  return remainder;
+}
+
+// Prüfziffer berechnen
+function calcCheckDigits(bban, land) {
+  const rearranged = bban + land + '00';
+  const numericStr = letterToNum(rearranged);
+  const check = 98 - mod97(numericStr);
+  return check.toString().padStart(2, '0');
+}
+
+// IBAN validieren (Prüfziffer prüfen)
+function validateIBAN(iban) {
+  const clean = iban.replace(/\s/g, '').toUpperCase();
+  if (clean.length < 5) return false;
+  const rearranged = clean.slice(4) + clean.slice(0, 4);
+  const numericStr = letterToNum(rearranged);
+  return mod97(numericStr) === 1;
+}
+
+// IBAN-Längen nach Land
+const IBAN_LENGTHS = {
+  DE:22, AT:20, CH:21, LU:20, NL:18, BE:16, FR:27, ES:24, IT:27, PL:28,
+  GB:22, SE:24, DK:18, FI:18, NO:15, PT:25, IE:22, GR:27, CZ:24, SK:24,
+  HU:28, RO:24, SI:19, HR:21, BG:22, LT:20, LV:21, EE:20, MT:31, CY:28
+};
+
+const SEPA_COUNTRIES = new Set([
+  'DE','AT','CH','LU','NL','BE','FR','ES','IT','PL','GB','SE','DK','FI','NO',
+  'PT','IE','GR','CZ','SK','HU','RO','SI','HR','BG','LT','LV','EE','MT','CY',
+  'LI','IS','MC','SM','VA','AD','ME','RS','BA','GI','IM','JE','GG'
+]);
+
+// Bank aus BLZ finden
+function findBank(blz) {
+  return BANKS.find(b => b.blz === blz) || null;
+}
+
+/* ══════════════════════════════════════════════════════
+   TAB 1: IBAN BERECHNEN
+   ══════════════════════════════════════════════════════ */
+
+function onBLZInput() {
+  const blz = document.getElementById('blz-input').value.replace(/\D/g,'');
+  const hint = document.getElementById('bank-hint-calc');
+  if (blz.length === 8) {
+    const bank = findBank(blz);
+    hint.textContent = bank ? '✓ ' + bank.name + ' · ' + bank.ort : '— Institut nicht in Datenbasis (IBAN-Berechnung trotzdem möglich)';
+    hint.style.color = bank ? 'var(--accent)' : 'var(--text-muted)';
+  } else {
+    hint.textContent = '— Institut wird automatisch erkannt';
+    hint.style.color = 'var(--text-muted)';
+  }
+}
+
+function berechneIBAN() {
+  const msgEl = document.getElementById('msg-calc');
+  const resultEl = document.getElementById('result-berechnen');
+  msgEl.classList.remove('show');
+  resultEl.classList.remove('show');
+
+  const blzRaw = document.getElementById('blz-input').value.replace(/\D/g,'');
+  const ktoRaw = document.getElementById('kto-input').value.replace(/\D/g,'');
+  const land = document.getElementById('land-select').value;
+
+  // Validierung
+  if (land === 'DE') {
+    if (blzRaw.length !== 8) { showMsg('msg-calc','BLZ muss genau 8 Stellen haben.'); return; }
+    if (ktoRaw.length === 0 || ktoRaw.length > 10) { showMsg('msg-calc','Kontonummer muss 1–10 Stellen haben.'); return; }
+  } else {
+    if (blzRaw.length === 0) { showMsg('msg-calc','Bitte Bankleitzahl eingeben.'); return; }
+    if (ktoRaw.length === 0) { showMsg('msg-calc','Bitte Kontonummer eingeben.'); return; }
+  }
+
+  let iban = '';
+  let bban = '';
+  let kto = ktoRaw;
+  let blz = blzRaw;
+
+  if (land === 'DE') {
+    kto = ktoRaw.padStart(10, '0');
+    bban = blz + kto;
+    const pruef = calcCheckDigits(bban, 'DE');
+    iban = 'DE' + pruef + bban;
+  } else if (land === 'AT') {
+    kto = ktoRaw.padStart(11, '0');
+    bban = blz.padStart(5,'0') + kto;
+    const pruef = calcCheckDigits(bban, 'AT');
+    iban = 'AT' + pruef + bban;
+  } else if (land === 'CH') {
+    kto = ktoRaw.padStart(12, '0');
+    bban = blz.padStart(5,'0') + kto;
+    const pruef = calcCheckDigits(bban, 'CH');
+    iban = 'CH' + pruef + bban;
+  } else {
+    // Generisch: BLZ + KTO auffüllen
+    bban = (blz + kto).padStart(IBAN_LENGTHS[land] - 4, '0');
+    const pruef = calcCheckDigits(bban, land);
+    iban = land + pruef + bban;
+  }
+
+  // Prüfe eigene Berechnung
+  if (!validateIBAN(iban)) {
+    showMsg('msg-calc','Prüfzifferberechnung fehlgeschlagen. Bitte Eingaben prüfen.');
+    return;
+  }
+
+  const bank = findBank(blzRaw);
+
+  // Ergebnisse füllen
+  document.getElementById('iban-raw-calc').textContent = iban;
+  document.getElementById('iban-display-calc').innerHTML = formatIBANColored(iban, land);
+  document.getElementById('r-land').textContent = iban.slice(0,2);
+  document.getElementById('r-pruef').textContent = iban.slice(2,4);
+  document.getElementById('r-blz').textContent = land === 'DE' ? iban.slice(4,12) : blz;
+  document.getElementById('r-kto').textContent = land === 'DE' ? iban.slice(12) : kto;
+  document.getElementById('r-bank').textContent = bank ? bank.name : '— nicht in Datenbasis';
+  document.getElementById('r-bic').textContent = bank ? bank.bic : '— nicht bekannt';
+  document.getElementById('r-len').textContent = iban.length + ' Stellen';
+
+  resultEl.classList.add('show');
+}
+
+/* ══════════════════════════════════════════════════════
+   TAB 2: IBAN PRÜFEN
+   ══════════════════════════════════════════════════════ */
+
+function formatIBANInput(input) {
+  // Nur Buchstaben+Ziffern
+  let v = input.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase();
+  input.value = v;
+}
+
+function pruefeIBAN() {
+  const msgEl = document.getElementById('msg-pruefen');
+  const resultEl = document.getElementById('result-pruefen');
+  msgEl.classList.remove('show');
+  resultEl.classList.remove('show');
+
+  const raw = document.getElementById('iban-input').value.replace(/\s/g,'').toUpperCase();
+
+  if (raw.length < 5) { showMsg('msg-pruefen','Bitte eine IBAN eingeben.'); return; }
+  if (!/^[A-Z]{2}/.test(raw)) { showMsg('msg-pruefen','IBAN muss mit einem Ländercode (2 Buchstaben) beginnen.'); return; }
+
+  const land = raw.slice(0,2);
+  const expectedLen = IBAN_LENGTHS[land];
+  const isValid = validateIBAN(raw);
+  const isSepa = SEPA_COUNTRIES.has(land);
+
+  // Status
+  let statusHTML;
+  if (!isValid) {
+    statusHTML = `<span class="status error"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Ungültig</span>`;
+  } else if (expectedLen && raw.length !== expectedLen) {
+    statusHTML = `<span class="status warn"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Prüfziffer ok, Länge ungewöhnlich</span>`;
+  } else {
+    statusHTML = `<span class="status ok"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Gültig</span>`;
+  }
+  document.getElementById('status-badge').innerHTML = statusHTML;
+
+  // Colored display
+  document.getElementById('iban-display-check').innerHTML = formatIBANColored(raw, land);
+  document.getElementById('iban-raw-check').textContent = raw;
+
+  // Felder
+  document.getElementById('p-land').textContent = land + (countryName(land) ? ' — ' + countryName(land) : '');
+  document.getElementById('p-pruef').textContent = raw.slice(2,4);
+
+  // DE-spezifisch
+  if (land === 'DE' && raw.length >= 12) {
+    const blz = raw.slice(4,12);
+    const kto = raw.slice(12);
+    const bank = findBank(blz);
+    document.getElementById('p-blz').textContent = blz;
+    document.getElementById('p-kto').textContent = kto;
+    document.getElementById('p-bank').textContent = bank ? bank.name + ' · ' + bank.ort : '— nicht in Datenbasis';
+    document.getElementById('p-bic').textContent = bank ? bank.bic : '— nicht bekannt';
+    document.getElementById('p-blz-row').style.display = '';
+    document.getElementById('p-kto-row').style.display = '';
+  } else {
+    document.getElementById('p-blz').textContent = raw.slice(4);
+    document.getElementById('p-kto').textContent = '—';
+    document.getElementById('p-bank').textContent = '— (nur für DE-IBANs)';
+    document.getElementById('p-bic').textContent = '— (nur für DE-IBANs)';
+  }
+
+  document.getElementById('p-check').innerHTML = isValid
+    ? '<span style="color:var(--accent)">✓ Korrekt</span>'
+    : '<span style="color:#e07070">✗ Falsch</span>';
+  document.getElementById('p-len').textContent = raw.length + ' Stellen' + (expectedLen ? ' (erwartet: ' + expectedLen + ')' : '');
+  document.getElementById('p-sepa').innerHTML = isSepa
+    ? '<span style="color:var(--accent)">✓ Ja</span>'
+    : '<span style="color:#e07070">✗ Nein / nicht bekannt</span>';
+
+  resultEl.classList.add('show');
+}
+
+/* ══════════════════════════════════════════════════════
+   TAB 3: BLZ-SUCHE
+   ══════════════════════════════════════════════════════ */
+
+function blzSuche() {
+  const q = document.getElementById('blz-search-input').value.trim().toLowerCase();
+  const tbody = document.getElementById('blz-tbody');
+  const container = document.getElementById('blz-table-container');
+  const countEl = document.getElementById('blz-result-count');
+  const msgEl = document.getElementById('msg-blz');
+
+  if (q.length < 3) {
+    container.style.display = 'none';
+    msgEl.style.display = 'none';
+    countEl.textContent = '';
+    return;
+  }
+
+  const results = BANKS.filter(b =>
+    b.blz.includes(q) ||
+    b.name.toLowerCase().includes(q) ||
+    b.bic.toLowerCase().includes(q) ||
+    b.ort.toLowerCase().includes(q) ||
+    b.plz.includes(q)
+  ).slice(0, 30);
+
+  if (results.length === 0) {
+    container.style.display = 'none';
+    msgEl.textContent = 'Keine Ergebnisse gefunden. Suche in ausgewählten Instituten.';
+    msgEl.style.display = 'block';
+    countEl.textContent = '';
+    return;
+  }
+
+  msgEl.style.display = 'none';
+  countEl.textContent = results.length + ' Treffer' + (results.length === 30 ? ' (max. angezeigt)' : '');
+
+  tbody.innerHTML = results.map(b => `
+    <tr style="cursor:pointer;" onclick="useBank('${b.blz}','${b.bic}','${b.name}')">
+      <td>${b.blz}</td>
+      <td>${b.name}</td>
+      <td>${b.bic}</td>
+      <td>${b.ort}</td>
+      <td>${b.plz}</td>
+    </tr>
+  `).join('');
+
+  container.style.display = 'block';
+}
+
+function useBank(blz, bic, name) {
+  // Zur IBAN-Berechnung wechseln
+  showTabByName('berechnen');
+  document.getElementById('blz-input').value = blz;
+  onBLZInput();
+  document.getElementById('kto-input').focus();
+}
+
+function showTabByName(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.tab-btn')[name === 'pruefen' ? 0 : name === 'berechnen' ? 1 : name === 'blzsuche' ? 2 : 3].classList.add('active');
+}
+
+/* ══════════════════════════════════════════════════════
+   HILFSFUNKTIONEN UI
+   ══════════════════════════════════════════════════════ */
+
+function formatIBANColored(iban, land) {
+  if (land === 'DE' && iban.length === 22) {
+    const lc = iban.slice(0,2);
+    const pz = iban.slice(2,4);
+    const blz = iban.slice(4,12);
+    const kto = iban.slice(12);
+    return `<span class="ic">${lc}</span><span class="ip">${pz}</span><span class="ib">${blz}</span><span class="ik">${kto}</span>`;
+  }
+  // Generisch: Ländercode + Prüfziffer + Rest
+  const lc = iban.slice(0,2);
+  const pz = iban.slice(2,4);
+  const rest = iban.slice(4);
+  return `<span class="ic">${lc}</span><span class="ip">${pz}</span><span class="ik">${rest}</span>`;
+}
+
+function showMsg(id, text) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.classList.add('show');
+}
+
+function copyIBAN(spanId) {
+  const text = document.getElementById(spanId).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btns = document.querySelectorAll('.copy-btn');
+    btns.forEach(b => {
+      if (b.getAttribute('onclick').includes(spanId)) {
+        const orig = b.innerHTML;
+        b.innerHTML = b.innerHTML.replace('IBAN kopieren', 'Kopiert ✓');
+        b.style.color = 'var(--accent)';
+        b.style.borderColor = 'var(--accent)';
+        setTimeout(() => { b.innerHTML = orig; b.style.color = ''; b.style.borderColor = ''; }, 2000);
+      }
+    });
+  });
+}
+
+function countryName(code) {
+  const names = {
+    DE:'Deutschland',AT:'Österreich',CH:'Schweiz',LU:'Luxemburg',NL:'Niederlande',
+    BE:'Belgien',FR:'Frankreich',ES:'Spanien',IT:'Italien',PL:'Polen',
+    GB:'Vereinigtes Königreich',SE:'Schweden',DK:'Dänemark',FI:'Finnland',
+    NO:'Norwegen',PT:'Portugal',IE:'Irland',GR:'Griechenland',CZ:'Tschechien',
+    SK:'Slowakei',HU:'Ungarn',RO:'Rumänien',SI:'Slowenien',HR:'Kroatien',
+    BG:'Bulgarien',LT:'Litauen',LV:'Lettland',EE:'Estland',MT:'Malta',CY:'Zypern'
+  };
+  return names[code] || '';
+}
+
+/* Enter-Taste für Eingaben */
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const activeTab = document.querySelector('.tab-panel.active');
+    if (activeTab && activeTab.id === 'tab-berechnen') berechneIBAN();
+    if (activeTab && activeTab.id === 'tab-pruefen') pruefeIBAN();
+  }
+});
+
+</script>
+</body>
+</html>
