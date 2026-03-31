@@ -433,7 +433,7 @@ footer{text-align:center;padding:32px 0 0;font-family:'IBM Plex Mono',monospace;
 
 </div>
 
-<footer>Robin Glowania</footer>
+<footer>© Robin Glowania</footer>
 
 <script>
 /* ══════════════════════════════════════════════════════
@@ -801,25 +801,28 @@ function blzSuche() {
   msgEl.style.display = 'none';
   countEl.textContent = results.length + ' Treffer' + (results.length === 50 ? ' (max. angezeigt)' : '');
 
-  tbody.innerHTML = results.map(b => {
-    const enc = b.code.replace(/'/g,"\\'");
-    const encbic = b.bic.replace(/'/g,"\\'");
-    const encname = b.name.replace(/'/g,"\\'");
-    return \`<tr style="cursor:pointer;" onclick="useBank('\${enc}','\${encbic}','\${encname}','\${b.country}')">
-      <td>\${b.country}</td>
-      <td>\${b.code}</td>
-      <td>\${b.name || '<span style=\"color:var(--text-muted)\">—</span>'}</td>
-      <td>\${b.bic}</td>
-    </tr>\`;
+  tbody.innerHTML = results.map(function(b) {
+    var nameCell = b.name ? b.name : '<span style="color:var(--text-muted)">—</span>';
+    return '<tr style="cursor:pointer;" onclick="useBank(this)">'
+      + '<td>' + b.country + '</td>'
+      + '<td>' + b.code + '</td>'
+      + '<td>' + nameCell + '</td>'
+      + '<td>' + b.bic + '</td>'
+      + '</tr>';
   }).join('');
+  Array.from(tbody.querySelectorAll('tr')).forEach(function(tr, i) {
+    tr._bankData = results[i];
+  });
 
   container.style.display = 'block';
 }
 
-function useBank(code, bic, name, country) {
-  if (country === 'DE') {
+function useBank(tr) {
+  var d = tr._bankData;
+  if (!d) return;
+  if (d.country === 'DE') {
     showTabByName('berechnen');
-    document.getElementById('blz-input').value = code;
+    document.getElementById('blz-input').value = d.code;
     document.getElementById('land-select').value = 'DE';
     onBLZInput();
     document.getElementById('kto-input').focus();
